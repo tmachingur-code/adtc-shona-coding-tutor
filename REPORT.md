@@ -1,69 +1,99 @@
 # Technical Report — Offline Shona AI Coding Tutor
 
-**Team ID:** 
-**Domain:** coding_assistants
-**Model:** gemma-2-2b-it-Q4_K_M
+**Africa Deep Tech Challenge 2026 — Laptop LLM Challenge**
 
----
+## 1. Problem & Approach
 
-## Problem
+Many first-time programmers in Zimbabwe learn Computer Science concepts in English only, with no offline option and no support in a home language. This project is an on-device coding tutor that explains core CS/Python concepts in **English and Shona**, runs entirely offline within a 7GB RAM budget, and grounds its answers in a curated syllabus via retrieval-augmented generation (RAG) rather than free generation alone.
 
-Access to coding education across much of Africa is constrained by unreliable or expensive internet connectivity, the cost of cloud-based AI tutoring subscriptions, and the fact that most instructional material — including AI tutoring tools — is delivered exclusively in English, disadvantaging students who are more comfortable learning technical concepts in a local language.
+The system has two modes — ask-a-question and generate-practice-questions — and both respect a single upfront mode/language choice.
 
-This is a first-hand problem for our team: we draw on lived experience from Gokwe North, Zimbabwe, a rural community where consistent connectivity and subscription-based tools are not a given, and where Shona is the primary language of everyday communication.
+## 2. Model Selection
 
-**Target user:** students and self-learners in under-connected areas who want to learn foundational Python and computer science, in English or Shona, without needing a stable internet connection or a paid subscription.
+Two candidates were benchmarked head-to-head, same quantization level (Q4_K_M), same hardware:
 
-**Why local matters here:** cloud-based tutors are unusable without reliable data access, and even where connectivity exists, the recurring cost is a real barrier for students. Running entirely on-device removes both blockers — the tutor works the same whether a student has connectivity that day or not.
-
-## Design Decisions
-
-**Base model:** We started with Phi-3.5-mini-instruct (Microsoft, 3.8B), then switched to **Gemma-2-2b-it (Google, 2.6B)** after empirical comparison (see Benchmarks).
-
-**Quantization:** Q4_K_M — chosen for a balance of output quality and memory footprint, standard practice for CPU-only local inference via `llama.cpp`.
-
-**Alternatives considered:**
-- **Phi-3.5-mini-instruct (Q4_K_M)** — our original choice. Benchmarked at ~6.8 tokens/sec and 4.75GB peak RAM. Working, but slower and heavier than necessary given our RAM headroom, so we tested a smaller model.
-- **Gemma-2-2b-it (Q4_K_M)** — selected as final model. ~42% faster (9.67 tokens/sec self-measured) and ~31% less RAM (3.29GB self-measured) than Phi-3.5-mini, with no observed quality regression across our test questions.
-- **Model-generated Shona output** — tested and rejected. Both candidate models produced incoherent Shona when asked to generate it freely (Shona is a significantly under-resourced language in current LLM training data). We use curated, human-verified Shona content instead of model generation for all Shona-language output (explanations and practice questions), retrieved via the same RAG pipeline used for English. This is a deliberate accuracy tradeoff, not an oversight.
-
-## Constraints
-
-- **Target hardware:** 8 GB RAM, integrated GPU (no discrete GPU), Ubuntu 22.04 LTS — matches the ADTC Standard Laptop profile.
-- **No GPU acceleration** — pure CPU inference via `llama.cpp` throughout. We explicitly removed a default GPU-enabled PyTorch install in favor of the CPU-only build to avoid unnecessary bloat, since our target hardware has no CUDA-capable GPU.
-- **Connectivity constraint:** the application must function with zero internet dependency once the model is downloaded — this shaped our choice of RAG (retrieval over a local knowledge base) instead of any live API calls or cloud-based translation for Shona content.
-- **Data availability constraint:** no existing Shona-language CS education dataset was available, so our syllabus (21 topics, English + Shona explanations, examples, and practice questions) was authored directly by the team rather than sourced.
-- **Language input constraint (discovered during testing):** the sentence-embedding model used for retrieval (`all-MiniLM-L6-v2`) does not reliably match fully Shona-language questions to our syllabus (measured embedding similarity as low as 0.15 for a genuine topic match). It does reliably match *code-switched* questions — Shona sentence structure with an embedded English technical term (e.g. "Chii chinonzi for loop"). We scoped and documented this rather than overclaiming full bilingual input support.
-
-## Benchmarks
-
-**Self-reported development benchmarks (own `benchmark.py`, WSL2 Ubuntu, 12 CPU cores, 7.6GB RAM available):**
-
-| Metric | Phi-3.5-mini (3.8B) | Gemma-2-2b-it (2.6B) — final |
+| Model | Peak RAM | Speed |
 |---|---|---|
-| Machine | WSL2 Ubuntu (12-core, 7.6GB RAM) | WSL2 Ubuntu (12-core, 7.6GB RAM) |
-| RAM at peak | 4.75 GB | 3.29 GB |
-| Time to first token (model load) | ~2–8 sec | ~2 sec |
-| Generation speed | ~6.7–6.9 t/s | 9.67 t/s |
-| Thermal throttling | None observed | None observed |
+| Phi-3.5-mini-instruct | 4.75 GB | 6.8 tok/s |
+| **Gemma-2-2b-it (chosen)** | **3.29 GB** | **9.67 tok/s** |
 
-**Official adtc-profiler results (participant mode, `measured_on: participant_laptop`):**
+Gemma-2-2b-it was adopted as the final model: lower memory footprint, meaningfully faster, no observed quality regression on syllabus-grounded English generation in manual testing.
 
-| Metric | Value |
+Increasing `n_threads` from 4 to 8 (12 cores available) gave a negligible speed gain (6.71 → 6.87 tok/s on the original model), ruling out thread count as the main lever — the gain came from model choice instead.
+
+**Quantization:** Q5_K_M was also tested against Q4_K_M for a possible accuracy gain. Result: identical arc_easy accuracy (0.72) but 34% slower (5.65 vs 8.57 tok/s), dropping the estimated composite score from ~65.3 to ~61.5. Q4_K_M was kept as final — no accuracy benefit from the higher quantization on this benchmark, at a real performance cost.
+
+## 3. Why Shona Answers Are Curated, Not Generated
+
+Early testing had the model generate Shona explanations freely, using the same RAG pipeline as English. Output quality was poor and frequently incoherent — the base model's Shona generation is not reliable enough to present to a learner as an authoritative explanation.
+
+Design response: for on-syllabus Shona questions, the tutor returns **curated, human-verified Shona content** written directly into `syllabus.json`, rather than anything model-generated. English mode continues to use live model generation grounded in retrieved context. This trades some flexibility for correctness, which matters more in an educational tool.
+
+## 4. Shona Question Input — Retrieval Limitation
+
+The embedding model (`all-MiniLM-L6-v2`) is not strong at cross-lingual matching for this language pair. Measured similarity between the English phrase "for loop" and its Shona equivalent was **0.154** — far too low to match reliably.
+
+Testing across phrasing styles found a consistent pattern:
+- **Fully English questions** — match reliably.
+- **Code-switched questions** (Shona grammar with an embedded English technical term, e.g. *"Chii chinonzi for loop"*) — match reliably.
+- **Fully Shona questions with no English technical term** — do not match reliably; the fallback path triggers instead.
+
+This is documented as an accurate capability description rather than claiming either "no Shona support" or "full Shona support" — code-switching, which is how many Shona speakers naturally phrase technical questions in practice, is supported.
+
+## 5. Retrieval Threshold Tuning
+
+A distance-threshold fallback was added so the tutor can recognize when a question is off-syllabus rather than confidently hallucinating a syllabus answer.
+
+- Initial calibration: on-topic distance ≈ 0.42, paraphrased on-topic ≈ 1.10, off-topic ≈ 1.94 → threshold set at **1.4**.
+- Full regression test across all syllabus topics (42 test questions: English "what is X" + Shona code-switched "Chii chinonzi X" per topic): 40/42 passed. The 2 failures were short single-word topics (Variables, Lists) narrowly exceeding the threshold.
+- Threshold raised to **1.6** to fix both remaining failures while keeping a safe margin below the off-topic baseline (~1.94).
+
+**False-positive investigation at threshold 1.6:** testing found 8–9 out of 10 genuinely off-syllabus questions were falsely matched to an unrelated syllabus topic. Two mitigations were tried:
+- **Embedding enrichment** (indexing example code + common mistakes alongside the explanation) — made true-topic matching *worse* without fixing the false-positive rate. Reverted.
+- **Dual per-language thresholds** — explored but abandoned given deadline pressure in favor of the last fully-tested, stable configuration.
+
+**Syllabus expansion as the real fix:** the syllabus was expanded from 21 to 58 entries (adding algorithm design, error types, file I/O, list comprehensions, OOP classes/inheritance, recursion, lambda functions, pip installs, and debugging-strategy topics). Re-testing after expansion closed 8 of the original false-positive gaps by giving those questions a real syllabus home. Remaining false positives are concentrated on genuinely advanced/uncovered topics (decorators, metaclasses, async/await, generators, dependency injection) at a similar ~80% false-positive rate on that narrow slice.
+
+**Current status:** `DISTANCE_THRESHOLD = 1.6`, simple (non-enriched) embeddings, shared offline `embedder.py`. Further threshold/embedding tuning was stopped given the submission deadline; the remaining false-positive risk on advanced/uncovered topics is documented here as a known, bounded limitation rather than silently left unaddressed.
+
+## 6. Out-of-Scope Question Handling
+
+Judges grade against domain and hidden prompts that go beyond the curated syllabus, so a design that flatly refuses every out-of-scope question would be scored poorly on accuracy even where the model could plausibly help. The handling was redesigned:
+
+- **English, out-of-scope**: the model attempts a real answer from general knowledge (not syllabus-grounded, since there's no matched context to ground it in).
+- **Shona, out-of-scope**: the tutor apologizes in Shona for not having a Shona explanation on file, then gives a real model-generated English answer — rather than a flat refusal in either language.
+
+This applies consistently to both Q&A and practice-question modes. Input validation with a retry loop was also added for mode/language selection, plus numeric shortcuts (`1`=english, `0`=shona).
+
+## 7. Benchmarks
+
+**Own benchmark (`benchmark.py`)**, includes embedder/index load: peak RAM 4.75GB on the original (Phi-3.5-mini) configuration, dropping to 3.29GB after switching to Gemma-2-2b-it.
+
+**Official ADTC profiler** (`adtc-profiler`, full run, accuracy included — not `--skip-accuracy`, since accuracy is 50% of the total score):
+
+| Metric | Result |
 |---|---|
-| Machine | Intel i5-1335U, 7.6GB RAM, no GPU, Ubuntu |
-| Peak RSS | 2.75 GB |
-| Generation speed | 9.01–10.41 t/s (two runs, normal CPU benchmark variance) |
-| CPU utilization (p99) | 50.7–50.8% |
-| Thermal throttling | None (`throttled: false`) |
-| Parameter count | 2,614,341,888 (confirmed match against declared 2.6B estimate) |
+| Peak RAM | 2.75 GB |
+| Throughput | 8.57 tokens/sec |
+| Thermal throttling | None observed |
+| arc_easy accuracy (50 samples) | 0.72 |
+| Estimated composite score | ~65.3 / 100 (S_acc=72, S_perf=57.1, S_eff=60.7) |
 
-These official figures are measured by the ADTC profiler on our development machine in participant mode; final scores are measured by the ADTC profiler on the standard evaluation machine during Gate 2.
+An earlier profiler pass reported 10.41 tok/s and 2.75GB, but that run used `--skip-accuracy` (a smoke test only) and does not reflect the scored submission; the figures above are from the full run used for `submission.json`.
 
-## Additional Notes
+`metadata.json` parameter count was corrected from an initial rough estimate of 2B to the actual value: **2,614,341,888 parameters (2.6B)**.
 
-**Practice question generation:** beyond direct Q&A, the tutor can generate topic-specific practice questions — English questions are generated live by the model using retrieved syllabus context; Shona questions are drawn from a curated set (same accuracy rationale as explanations).
+## 8. Known Limitations
 
-**Retrieval accuracy safeguard:** we tuned a similarity-distance threshold (FAISS L2, threshold = 1.4) so that out-of-scope questions trigger an honest fallback message rather than a confidently wrong answer, validated against exact-match (distance ≈ 0.42), paraphrased (≈ 1.10), and off-topic (≈ 1.94) test cases.
+- Fully Shona question input (no English technical term) does not match reliably — see §4.
+- Retrieval can misroute genuinely advanced/uncovered topics (decorators, metaclasses, async/await, generators, dependency injection) to an unrelated syllabus entry rather than falling through cleanly to the general-knowledge path — see §5.
+- Shona answers are limited to the curated set in `syllabus.json`; there is no free-form Shona generation.
+- CPU-only, single-model deployment — no ensemble or larger-model fallback within the 7GB budget.
 
-**Known limitations:** question input is reliable in English and in code-switched Shona (with an embedded English technical term), but not in fully Shona phrasing without an English term present; Shona output is curated rather than freely generated; the syllabus is scoped to 21 core CS topics.
+## 9. Reproducing Results
+
+```bash
+python3 build_index.py
+python3 benchmark.py
+adtc-profiler run --submission . --mode participant --output submission.json
+```
