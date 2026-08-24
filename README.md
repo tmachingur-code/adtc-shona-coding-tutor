@@ -1,6 +1,6 @@
 # Offline Shona AI Coding Tutor
 
-An offline AI coding tutor built for the **Africa Deep Tech Challenge 2026 — Laptop LLM Challenge**. Teaches Python and CS fundamentals in English and Shona, running fully on-device with no internet required.
+An offline AI coding tutor built for the **Africa Deep Tech Challenge 2026 — Laptop LLM Challenge**. Teaches Python and Computer science fundamentals in English and Shona, running fully on-device with no internet required.
 
 ## Features
 
@@ -67,7 +67,19 @@ Your question is embedded (locally, via a shared `embedder.py` module wrapping `
 
 ## Syllabus Coverage
 
-58 topics across: Python Basics · Control Flow · Functions · Data Structures · Algorithms & Reasoning (sorting, searching, Big-O) · Debugging Fundamentals · Error Types & File I/O · List Comprehensions · OOP (classes, inheritance) · Recursion · Lambda Functions · pip/package installs · Debugging Strategy.
+58 topics across: 
+
+- Python Basics 
+- Control Flow
+- Functions
+- Data Structures
+- Algorithms & Reasoning (sorting, searching, Big-O)
+- Debugging Fundamentals · Error Types & File I/O
+- List Comprehensions · OOP (classes, inheritance)
+- Recursion
+- Lambda Functions
+- pip/package installs
+- Debugging Strategy
 
 ## Checking Performance
 
@@ -91,6 +103,7 @@ See `REPORT.md` for full design rationale, constraints, benchmarks, and known li
 ## Repository Structure
 
 ```
+├── .gitignore             # excludes *.gguf and model/
 ├── metadata.json          # Team, model, and test prompt metadata
 ├── download_model.sh      # Downloads the model weights + embedder to model/
 ├── REPORT.md              # Technical writeup
@@ -99,10 +112,10 @@ See `REPORT.md` for full design rationale, constraints, benchmarks, and known li
 │   ├── syllabus.json      # Curated CS syllabus, 58 topics (English + Shona)
 │   ├── syllabus_map.json  # Generated lookup used by the RAG pipeline
 │   └── syllabus.index     # Generated FAISS index
-├── embedder.py             # Shared offline embedding module (all-MiniLM-L6-v2, local)
-├── rag_tutor.py            # Main application
+├── embedder.py            # Shared offline embedding module (all-MiniLM-L6-v2, local)
+├── rag_tutor.py           # Main application
 ├── build_index.py         # Builds the FAISS index from syllabus.json
-├── benchmark.py          #Own RAM/Speed benchmark script
+├── benchmark.py           #Own RAM/Speed benchmark script
 ├──submission.json         
 ├──README.md              #Project description and usage
 └── requirements.txt
