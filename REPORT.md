@@ -1,8 +1,8 @@
 # Technical Report — Offline Shona AI Coding Tutor
 
-Team ID: https://devpost.com/software/shona-coding-tutor-offline-on-device-ai
-Domain: coding_assistants
-Model: gemma-2-2b-it-Q4_K_M
+- Team ID: https://devpost.com/software/shona-coding-tutor-offline-on-device-ai
+- Domain: coding_assistants
+- Model: gemma-2-2b-it-Q4_K_M
 
 **Africa Deep Tech Challenge 2026 — Laptop LLM Challenge**
 
@@ -10,7 +10,7 @@ Model: gemma-2-2b-it-Q4_K_M
 
 Many first-time programmers in Zimbabwe learn Computer Science concepts in English only, with no offline option and no support in a home language. This project is an on-device coding tutor that explains core CS/Python concepts in **English and Shona**, runs entirely offline within a 7GB RAM budget, and grounds its answers in a curated syllabus via retrieval-augmented generation (RAG) rather than free generation alone.
 
-The system has two modes — ask-a-question and generate-practice-questions — and both respect a single upfront mode/language choice.
+The system has two modes: ask-a-question and generate-practice-questions; and both respect a single upfront mode/language choice.
 
 ## 2. Model Selection
 
@@ -38,7 +38,7 @@ Design response: for on-syllabus Shona questions, the tutor returns **curated, h
 The embedding model (`all-MiniLM-L6-v2`) is not strong at cross-lingual matching for this language pair. Measured similarity between the English phrase "for loop" and its Shona equivalent was **0.154** — far too low to match reliably.
 
 Testing across phrasing styles found a consistent pattern:
-- **Fully English questions** — match reliably.
+- **Fully English questions** match reliably.
 - **Code-switched questions** (Shona grammar with an embedded English technical term, e.g. *"Chii chinonzi for loop"*) — match reliably.
 - **Fully Shona questions with no English technical term** — do not match reliably; the fallback path triggers instead.
 
@@ -54,7 +54,7 @@ A distance-threshold fallback was added so the tutor can recognize when a questi
 
 **False-positive investigation at threshold 1.6:** testing found 8–9 out of 10 genuinely off-syllabus questions were falsely matched to an unrelated syllabus topic. Two mitigations were tried:
 - **Embedding enrichment** (indexing example code + common mistakes alongside the explanation) — made true-topic matching *worse* without fixing the false-positive rate. Reverted.
-- **Dual per-language thresholds** — explored but abandoned given deadline pressure in favor of the last fully-tested, stable configuration.
+- **Dual per-language thresholds**: explored but abandoned given deadline pressure in favor of the last fully-tested, stable configuration.
 
 **Syllabus expansion as the real fix:** the syllabus was expanded from 21 to 58 entries (adding algorithm design, error types, file I/O, list comprehensions, OOP classes/inheritance, recursion, lambda functions, pip installs, and debugging-strategy topics). Re-testing after expansion closed 8 of the original false-positive gaps by giving those questions a real syllabus home. Remaining false positives are concentrated on genuinely advanced/uncovered topics (decorators, metaclasses, async/await, generators, dependency injection) at a similar ~80% false-positive rate on that narrow slice.
 
