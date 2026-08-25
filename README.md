@@ -61,6 +61,20 @@ Your question is embedded (locally, via a shared `embedder.py` module wrapping `
 - **English, out-of-scope questions**: the model attempts a real answer from its general knowledge (not syllabus-grounded), rather than refusing outright, since judges may test prompts beyond the curated syllabus.
 - **Shona, out-of-scope questions**: the tutor apologizes in Shona for not having a Shona explanation on file, then gives a real model-generated English answer.
 
+
+```mermaid
+flowchart LR
+  question[User question] --> embed[MiniLM embed]
+  embed --> faiss[FAISS L2 search]
+  faiss -->|"distance <= 1.6"| inScope[In-scope]
+  faiss -->|"distance > 1.6"| outScope[Out-of-scope]
+  inScope -->|English| gemmaGrounded[Gemma + syllabus context]
+  inScope -->|Shona| curated[Curated Shona text]
+  outScope -->|English| gemmaGeneral[Gemma general answer]
+  outScope -->|Shona| apology[Shona apology + English Gemma]
+```
+
+
 **Note on Shona input:** questions phrased fully in English, or in Shona with an embedded English technical term (e.g. "Chii chinonzi for loop"), match reliably. Fully Shona questions with no English technical term do not currently match reliably — see `REPORT.md` for details.
 
 **Note on retrieval limits:** matching is tuned against the 58-topic syllabus; genuinely advanced or uncovered topics (e.g. decorators, metaclasses, async/await, generators, dependency injection) can still be misrouted to an unrelated syllabus topic rather than falling through to the general-knowledge path. This is a known, bounded limitation — see `REPORT.md`.
