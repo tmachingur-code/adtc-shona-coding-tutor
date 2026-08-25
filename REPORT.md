@@ -1,5 +1,9 @@
 # Technical Report — Offline Shona AI Coding Tutor
 
+Team ID: https://devpost.com/software/shona-coding-tutor-offline-on-device-ai
+Domain: coding_assistants
+Model: gemma-2-2b-it-Q4_K_M
+
 **Africa Deep Tech Challenge 2026 — Laptop LLM Challenge**
 
 ## 1. Problem & Approach

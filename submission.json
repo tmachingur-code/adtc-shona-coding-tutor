@@ -2,7 +2,7 @@
   "schema_version": "1.1.0",
   "profiler_version": "adtc-profiler 0.1.0",
   "submission": {
-    "team_id": "group21",
+    "team_id": "https://devpost.com/software/shona-coding-tutor-offline-on-device-ai",
     "domain": "coding_assistants",
     "language_scope": [
       "en",
@@ -23,7 +23,7 @@
     "test_prompts": [
       {
         "prompt_id": "tp_001",
-        "prompt": "How do I sort a list in Python?"
+        "prompt": "What is for a loop?"
       },
       {
         "prompt_id": "tp_002",
@@ -46,15 +46,15 @@
     "os": "Ubuntu 26.04 LTS"
   },
   "throughput": {
-    "tokens_per_second_generation": 8.56,
-    "first_token_latency_ms": 17237.49,
+    "tokens_per_second_generation": 10.25,
+    "first_token_latency_ms": 9716.93,
     "prompt_tokens": 512,
     "generated_tokens": 128
   },
   "memory": {
-    "peak_rss_mb": 2750.59,
-    "steady_state_rss_mb": 2636.31,
-    "peak_vms_mb": 3435.75
+    "peak_rss_mb": 2750.4,
+    "steady_state_rss_mb": 2639.13,
+    "peak_vms_mb": 3435.8
   },
   "accuracy": [
     {
@@ -67,12 +67,12 @@
     }
   ],
   "cpu_thermal": {
-    "cpu_percent_p99": 51.0,
+    "cpu_percent_p99": 50.5,
     "core_temp_c_peak": null,
     "throttled": false
   },
   "reproducibility": {
-    "git_commit_sha": "bc24e9852526",
+    "git_commit_sha": "1ea8440c462a",
     "docker_image_digest": "unknown",
     "random_seed": 42
   },

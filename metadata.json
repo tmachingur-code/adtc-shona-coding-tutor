@@ -1,5 +1,5 @@
 {
-  "team_id": "group21",
+  "team_id": "https://devpost.com/software/shona-coding-tutor-offline-on-device-ai",
   "domain": "coding_assistants",
   "language_scope": ["en", "sn"],
   "african_alpha_claim": true,
@@ -17,7 +17,7 @@
   "test_prompts": [
     {
       "prompt_id": "tp_001",
-      "prompt": "How do I sort a list in Python?"
+      "prompt": "What is for a loop?"
     },
     {
       "prompt_id": "tp_002",
